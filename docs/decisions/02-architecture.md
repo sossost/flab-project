@@ -413,6 +413,91 @@ app/
 
 ---
 
+## 결정 6-1: QueryClient 선언 방식 (컴포넌트 내부 vs 외부)
+
+**날짜**: 2025-12-10
+
+### 컨텍스트
+
+Next.js App Router는 SSR(Server Side Rendering) 환경이므로, React Query의 `QueryClient`를 어디에 선언하느냐에 따라 **데이터 격리(Isolation)**가 달라집니다. 컴포넌트 외부에 선언하면 서버에서 여러 사용자의 요청이 같은 `QueryClient` 인스턴스를 공유하여 **다른 사용자의 데이터가 노출되는 심각한 보안 사고**가 발생할 수 있습니다.
+
+### 결정
+
+**컴포넌트 내부에서 `useState`로 선언 (Per-Request 방식)**
+
+```tsx
+export default function QueryClientProvider({ children }) {
+  const [queryClient] = useState(() => new QueryClient({...}));
+  return <TanStackQueryClientProvider client={queryClient}>...</TanStackQueryClientProvider>;
+}
+```
+
+### 근거
+
+- **데이터 격리**: 각 요청(사용자)마다 독립적인 `QueryClient` 인스턴스가 생성되어 데이터가 섞이지 않음
+- **보안**: SSR 환경에서 다른 사용자의 데이터가 노출되는 것을 방지
+- **SSR 호환성**: Next.js App Router의 SSR 환경에서 안전하게 동작
+- **클라이언트 상태 유지**: `useState`의 lazy initialization으로 컴포넌트가 리렌더링되어도 같은 인스턴스 유지
+
+### 동작 방식
+
+**서버 측:**
+
+- 각 요청이 들어올 때마다 컴포넌트가 새로 렌더링되면서 새로운 `QueryClient` 인스턴스 생성
+- 요청 처리가 끝나면 인스턴스가 사라짐 (데이터 격리)
+
+**클라이언트 측:**
+
+- `useState`로 선언되어 페이지 이동 시에도 같은 인스턴스 유지
+- 초기값으로 함수를 전달하여 컴포넌트가 마운트될 때 한 번만 생성 (lazy initialization)
+
+### 대안 검토
+
+#### 컴포넌트 외부 선언 (전역 변수) - ❌ 거부
+
+```tsx
+// ❌ Next.js SSR 환경에서는 절대 사용하면 안 됨
+const queryClient = new QueryClient();
+
+export default function QueryClientProvider({ children }) {
+  return <TanStackQueryClientProvider client={queryClient}>...</TanStackQueryClientProvider>;
+}
+```
+
+**특징:**
+
+- 파일이 로드될 때 한 번만 생성 (모듈 레벨 싱글톤)
+- 서버가 꺼질 때까지 계속 살아있음
+- 모든 요청이 같은 인스턴스를 공유
+
+**문제점:**
+
+- **데이터 누수**: A 사용자가 접속해서 조회한 데이터가 `QueryClient` 캐시에 저장됨
+- **보안 사고**: B 사용자가 접속하면 서버 메모리에 있는 A 사용자의 데이터가 노출될 수 있음
+- **SSR 환경에서 사용 불가**: Next.js App Router에서는 절대 사용하면 안 됨
+
+**사용 가능한 경우:**
+
+- SPA(CRA, Vite 등): 브라우저에서만 실행되므로 사용자 혼자만 사용하여 문제 없음
+
+### 비교표
+
+| 구분              | 외부 선언 (전역 변수)            | 내부 선언 (useState)                  |
+| :---------------- | :------------------------------- | :------------------------------------ |
+| **생성 시점**     | 파일이 로드될 때 (서버 켜질 때)  | 컴포넌트가 마운트될 때 (요청 올 때)   |
+| **수명**          | 서버가 꺼질 때까지 계속 살아있음 | 요청 처리가 끝나면 사라짐 (서버 기준) |
+| **인스턴스 공유** | 모든 요청이 같은 인스턴스 공유   | 각 요청마다 독립적인 인스턴스         |
+| **데이터 격리**   | ❌ 없음 (데이터 누수 위험)       | ✅ 있음 (안전)                        |
+| **SPA(CRA)**      | 사용 가능 (편함)                 | 사용 가능                             |
+| **SSR(Next.js)**  | ❌ 절대 금지 (정보 유출 위험)    | ✅ 필수 권장 사항                     |
+
+### 코드 위치
+
+- QueryClientProvider: `src/shared/providers/QueryClientProvider.tsx`
+- QueryClient 선언: 컴포넌트 내부에서 `useState`로 선언
+
+---
+
 ## 결정 7: ErrorBoundary 기본 구조
 
 **날짜**: 2025-12-10
