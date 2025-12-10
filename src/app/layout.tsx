@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 
 import './globals.css';
 import EmotionProvider from '@/shared/providers/EmotionProvider';
+import QueryClientProvider from '@/shared/providers/QueryClientProvider';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -28,7 +29,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <EmotionProvider>{children}</EmotionProvider>
+        <QueryClientProvider>
+          <EmotionProvider>{children}</EmotionProvider>
+        </QueryClientProvider>
       </body>
     </html>
   );
