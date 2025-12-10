@@ -1,0 +1,27 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.*
+
+# Build outputs
+.next
+out
+build
+dist
+
+# Testing
+coverage
+
+# Lock files
+yarn.lock
+package-lock.json
+pnpm-lock.yaml
+
+# Minified files
+*.min.js
+*.min.css
+
+# Misc
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts
