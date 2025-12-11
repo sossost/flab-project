@@ -83,8 +83,9 @@ src/
 ### 스타일링
 
 - **Emotion**: CSS-in-JS 라이브러리 사용
+- **테마 시스템**: Emotion Theme을 통한 디자인 토큰 관리
 - **Server Components**: Emotion 사용 불가, 전역 CSS 또는 기본 스타일 사용
-- **Client Components**: Emotion의 styled API 또는 css prop 사용
+- **Client Components**: Emotion의 styled API 또는 css prop 사용, `useTheme` 훅으로 테마 접근
 
 ## Getting Started
 
