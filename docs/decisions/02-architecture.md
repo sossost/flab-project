@@ -721,6 +721,100 @@ app/
 
 ---
 
+## 결정 10-1: 테마 관리 방식
+
+**날짜**: 2025-12-11
+
+### 컨텍스트
+
+Emotion을 사용한 스타일링에서 컬러, 타이포그래피 등 디자인 토큰을 어떻게 관리할지 결정해야 함. 로딩 스피너 등 공용 컴포넌트에서 컬러 스킴이 필요함
+
+### 결정
+
+**Emotion Theme 사용**
+
+- Emotion의 `ThemeProvider`와 `useTheme` 훅 사용
+- 테마 객체를 TypeScript로 정의하여 타입 안정성 확보
+- 다크모드는 현재 구현하지 않지만, 확장 가능한 구조로 설계
+
+### 근거
+
+1. **Emotion과의 자연스러운 통합**: Emotion의 네이티브 기능으로 `theme` prop을 통해 모든 컴포넌트에서 접근 가능
+2. **타입 안정성**: TypeScript로 테마 타입을 정의하여 자동완성과 타입 체크 제공
+3. **컴포넌트 접근성**: `useTheme` 훅이나 `theme` prop을 통해 모든 컴포넌트에서 쉽게 접근
+4. **확장성**: 다크모드 추가 시 테마 객체만 확장하면 됨
+5. **일관성**: 프로젝트 전반에서 동일한 디자인 토큰 사용 보장
+
+### 대안 검토
+
+#### 1. CSS 변수 (CSS Custom Properties)
+
+**장점:**
+
+- CSS와 JavaScript 모두에서 사용 가능
+- 런타임에 동적으로 변경 가능 (다크모드 전환 등)
+- 브라우저 네이티브 기능
+
+**단점:**
+
+- TypeScript 타입 안정성이 약함
+- Emotion과의 통합이 자연스럽지 않음
+- CSS 변수와 TypeScript 타입을 별도로 관리해야 함
+
+#### 2. TypeScript 상수 파일
+
+**장점:**
+
+- 타입 안정성
+- 단순하고 명확함
+- 의존성 없음
+
+**단점:**
+
+- Emotion과 통합 시 수동으로 import 필요
+- 런타임 변경이 어려움 (다크모드 전환 등)
+- 컴포넌트에서 접근이 불편함 (`import theme from '@/shared/theme'`)
+
+#### 3. 조합 방식 (CSS 변수 + TypeScript 상수)
+
+**장점:**
+
+- CSS와 JavaScript 모두에서 사용 가능
+- 타입 안정성 확보
+
+**단점:**
+
+- 중복 관리 가능성
+- 복잡도 증가
+
+### 테마 구조
+
+```typescript
+// src/shared/theme/index.ts
+export const theme = {
+  colors: {
+    primary: '#000000',
+    secondary: '#666666',
+    background: '#ffffff',
+    text: '#000000',
+    // ... 기타 컬러
+  },
+  // ... 기타 디자인 토큰
+} as const;
+```
+
+### 확장성 고려사항
+
+- 다크모드는 현재 구현하지 않지만, 테마 구조는 확장 가능하게 설계
+- 향후 다크모드 추가 시 테마 객체에 `dark` 속성 추가 또는 테마 함수로 확장 가능
+
+### 코드 위치
+
+- 테마 정의: `src/shared/theme/index.ts`
+- ThemeProvider: `src/app/layout.tsx` 또는 별도 Provider 컴포넌트
+
+---
+
 ## 결정 11: API 함수 구조 및 기본 에러 처리 방향
 
 **날짜**: 2025-12-10

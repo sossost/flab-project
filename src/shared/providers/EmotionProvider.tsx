@@ -5,7 +5,9 @@ import { useState } from 'react';
 import { useServerInsertedHTML } from 'next/navigation';
 
 import createCache from '@emotion/cache';
-import { CacheProvider } from '@emotion/react';
+import { CacheProvider, ThemeProvider } from '@emotion/react';
+
+import { theme } from '@/shared/theme';
 
 export default function EmotionProvider({ children }: { children: React.ReactNode }) {
   const [cache] = useState(() => {
@@ -25,5 +27,9 @@ export default function EmotionProvider({ children }: { children: React.ReactNod
     );
   });
 
-  return <CacheProvider value={cache}>{children}</CacheProvider>;
+  return (
+    <CacheProvider value={cache}>
+      <ThemeProvider theme={theme}>{children}</ThemeProvider>
+    </CacheProvider>
+  );
 }
