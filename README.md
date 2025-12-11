@@ -124,6 +124,48 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 - **피쳐별 API**: `app/{feature-name}/api/`에 배치
 - **타입 안정성**: 모든 API 함수에 타입 정의
 
+**사용 예시:**
+
+```typescript
+// 피쳐별 API 함수
+// app/list-pagination/api/products.ts
+import { apiClient } from '@/shared/api/client';
+
+interface Product {
+  id: number;
+  name: string;
+}
+
+export async function getProducts(page: number): Promise<Product[]> {
+  return apiClient.get<Product[]>(`/api/products?page=${page}`);
+}
+```
+
+**에러 처리:**
+
+```typescript
+import { ApiError } from '@/shared/api/types';
+
+try {
+  const products = await getProducts(1);
+} catch (error) {
+  if (error instanceof ApiError) {
+    console.error(`API Error: ${error.status} - ${error.message}`);
+    console.error('Error data:', error.data);
+  }
+}
+```
+
+**환경 변수 설정:**
+
+`.env.local` 파일에 다음을 추가:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3000/api
+```
+
+기본값은 `http://localhost:3000/api`입니다.
+
 ### 의사결정 문서
 
 프로젝트의 아키텍처 결정사항은 [의사결정 문서](./docs/decisions/)에서 확인할 수 있습니다.

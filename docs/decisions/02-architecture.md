@@ -991,3 +991,518 @@ export async function getProducts(page: number) {
 - 공통 API 설정: `src/shared/api/config.ts`
 - 피쳐별 API 함수: `src/app/{feature-name}/api/`
 - 피쳐별 API 타입: `src/app/{feature-name}/api/types.ts`
+
+---
+
+## 결정 11-1: API 클라이언트 에러 처리 방식
+
+**날짜**: 2025-12-11
+
+### 컨텍스트
+
+API 클라이언트 래퍼를 구현할 때 에러를 어떻게 처리하고 타입을 정의할지 결정해야 함. 네트워크 에러, HTTP 에러, 파싱 에러 등 다양한 에러 상황을 일관되게 처리해야 함
+
+### 결정
+
+**커스텀 ApiError 클래스 + throw 방식**
+
+- `ApiError` 클래스를 정의하여 에러 정보를 구조화
+- 에러 발생 시 throw하여 호출하는 쪽에서 처리하도록 함
+- React Query의 `onError`에서 에러 처리 가능
+
+### 근거
+
+- **구조화된 에러 정보**: status, message, data 등을 포함하여 에러 정보를 명확히 전달
+- **일관성**: 모든 에러가 동일한 형태로 처리되어 일관성 유지
+- **유연성**: 호출하는 쪽에서 필요에 따라 에러 처리 가능 (React Query의 onError 등)
+- **타입 안정성**: TypeScript로 에러 타입을 명확히 정의
+
+### 에러 타입 정의
+
+```typescript
+// shared/api/types.ts
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    public message: string,
+    public data?: unknown,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+```
+
+### 에러 처리 전략
+
+**공통 에러 처리:**
+
+- 네트워크 에러: fetch 실패 시 네트워크 에러로 처리
+- HTTP 에러: `response.ok === false`일 때 ApiError throw
+- 파싱 에러: JSON 파싱 실패 시 에러 throw
+- 빈 응답: 204 No Content 등 빈 응답 처리
+
+**에러 처리 흐름:**
+
+1. API 클라이언트에서 에러 발생 시 ApiError throw
+2. 피쳐별 API 함수에서 catch하여 추가 처리 가능 (선택적)
+3. React Query의 `onError`에서 최종 에러 처리
+
+### 대안 검토
+
+#### 대안 1: Result 타입 반환 (throw 없이)
+
+```typescript
+type Result<T, E> = { success: true; data: T } | { success: false; error: E };
+```
+
+**장점:**
+
+- 에러를 명시적으로 처리하도록 강제
+- 타입 안정성 향상
+
+**단점:**
+
+- 모든 호출에서 에러 체크 필요
+- React Query와의 통합이 어색함 (React Query는 throw 기반)
+- 코드가 장황해짐
+
+**선택하지 않은 이유:**
+
+- React Query가 throw 기반으로 동작하므로 throw 방식이 더 자연스러움
+- Result 타입은 Rust/Swift 스타일이지만 JavaScript/TypeScript 생태계와 맞지 않음
+
+#### 대안 2: 콜백 방식
+
+```typescript
+apiClient.get(url, {
+  onSuccess: (data) => {...},
+  onError: (error) => {...},
+});
+```
+
+**장점:**
+
+- 에러 처리를 명시적으로 할 수 있음
+
+**단점:**
+
+- Promise 기반 코드와 어색함
+- React Query와의 통합이 어려움
+- 코드가 복잡해짐
+
+**선택하지 않은 이유:**
+
+- Promise 기반 비동기 처리와 맞지 않음
+- React Query와의 통합이 어색함
+
+### 코드 위치
+
+- 에러 타입: `src/shared/api/types.ts`
+- 에러 처리: `src/shared/api/client.ts`
+
+---
+
+## 결정 11-2: BASE_URL 설정 방식
+
+**날짜**: 2025-12-11
+
+### 컨텍스트
+
+API 클라이언트에서 사용할 BASE_URL을 어떻게 설정하고 관리할지 결정해야 함. 환경별로 다른 URL을 사용해야 할 수 있음
+
+### 결정
+
+**환경 변수 + config.ts 파일**
+
+- `NEXT_PUBLIC_API_URL` 환경 변수 사용
+- `config.ts` 파일에서 환경 변수를 읽어서 관리
+- 기본값 설정 (개발 환경 대비)
+
+### 근거
+
+- **환경별 설정**: 개발/프로덕션 환경에 따라 다른 URL 사용 가능
+- **타입 안정성**: config.ts에서 타입을 정의하여 타입 안정성 확보
+- **중앙 관리**: BASE_URL을 한 곳에서 관리하여 변경 용이
+- **Next.js 호환**: `NEXT_PUBLIC_` 접두사로 클라이언트에서 접근 가능
+
+### 구조
+
+```typescript
+// shared/api/config.ts
+export const API_CONFIG = {
+  BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api',
+} as const;
+```
+
+### 대안 검토
+
+#### 대안 1: 환경 변수만 사용
+
+```typescript
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+```
+
+**장점:**
+
+- 단순함
+
+**단점:**
+
+- 타입 안정성 부족
+- 기본값 설정이 어색함
+- 설정이 분산됨
+
+**선택하지 않은 이유:**
+
+- config.ts 파일로 중앙 관리하는 것이 더 명확함
+
+#### 대안 2: 하드코딩
+
+```typescript
+const BASE_URL = 'http://localhost:3000/api';
+```
+
+**장점:**
+
+- 매우 단순함
+
+**단점:**
+
+- 환경별 설정 불가능
+- 유연성 부족
+
+**선택하지 않은 이유:**
+
+- 환경별 설정이 필요함
+
+### 코드 위치
+
+- 설정 파일: `src/shared/api/config.ts`
+
+---
+
+## 결정 11-3: HTTP 메서드 지원 및 헤더 관리
+
+**날짜**: 2025-12-11
+
+### 컨텍스트
+
+API 클라이언트에서 어떤 HTTP 메서드를 지원하고, 헤더를 어떻게 관리할지 결정해야 함
+
+### 결정
+
+**기본 HTTP 메서드 지원 + 기본 헤더 설정**
+
+- **지원 메서드**: GET, POST, PUT, DELETE
+- **기본 헤더**: `Content-Type: application/json`
+- **커스텀 헤더**: 각 메서드에서 추가 헤더 전달 가능
+
+### 근거
+
+- **필수 메서드**: RESTful API에서 가장 많이 사용하는 메서드
+- **일관성**: 모든 요청에 기본 헤더를 설정하여 일관성 유지
+- **유연성**: 필요 시 커스텀 헤더 추가 가능
+- **학습 효과**: 기본적인 HTTP 메서드를 직접 구현하며 학습
+
+### 메서드 시그니처
+
+```typescript
+class ApiClient {
+  async get<T>(url: string, headers?: HeadersInit): Promise<T>;
+  async post<T>(url: string, data?: unknown, headers?: HeadersInit): Promise<T>;
+  async put<T>(url: string, data?: unknown, headers?: HeadersInit): Promise<T>;
+  async delete<T>(url: string, headers?: HeadersInit): Promise<T>;
+}
+```
+
+### 헤더 관리
+
+**기본 헤더:**
+
+- `Content-Type: application/json` (body가 있는 요청에만 적용)
+- GET, DELETE 등 body가 없는 요청에는 Content-Type 헤더 추가하지 않음
+
+**커스텀 헤더:**
+
+- 각 메서드 호출 시 추가 헤더 전달 가능
+- 기본 헤더와 병합하여 사용
+
+### 추가 고려 사항
+
+다음 기능들은 고려했지만 현재는 도입하지 않기로 결정했습니다.
+
+#### 1. PATCH 메서드 추가
+
+**고려 사항:**
+
+- RESTful API에서 자주 사용되는 메서드
+- 부분 업데이트에 유용
+
+**도입하지 않은 이유:**
+
+- 현재 프로젝트에서 필요 여부 불명확
+- 기본 메서드(GET, POST, PUT, DELETE)만으로 충분
+- 필요 시 나중에 추가 가능
+
+#### 2. 인터셉터 방식
+
+**고려 사항:**
+
+```typescript
+apiClient.interceptors.request.use((config) => {
+  config.headers['Authorization'] = getToken();
+  return config;
+});
+```
+
+- 요청/응답 전후 처리 가능
+- 인증 토큰 자동 추가 등 유용한 기능
+
+**도입하지 않은 이유:**
+
+- 복잡도 증가
+- 현재 프로젝트에서 필요 여부 불명확
+- 현재는 단순한 구조가 더 적합
+- 필요 시 나중에 추가 가능
+
+#### 3. AbortController 지원
+
+**고려 사항:**
+
+- 요청 취소 기능 제공
+- 컴포넌트 언마운트 시 자동 취소
+- 타임아웃 구현 가능
+- 메모리 누수 방지
+
+**도입하지 않은 이유:**
+
+- **React Query 사용**: Client Components에서 React Query를 사용하는 경우, React Query가 내부적으로 AbortController를 사용하여 자동으로 요청 취소 처리
+- **Server Components**: Server Components에서 Next.js의 기본 `fetch`를 사용하는 경우, Next.js가 자동으로 요청 취소 처리
+- **현재 필요성 낮음**: 현재 프로젝트에서는 React Query와 Next.js fetch가 요청 취소를 자동으로 처리하므로 커스텀 API 클라이언트에 추가할 필요 없음
+- **필요 시 추가 가능**: 나중에 직접 fetch를 사용하는 경우가 생기면 그때 추가 가능
+
+### 코드 위치
+
+- API 클라이언트: `src/shared/api/client.ts`
+
+---
+
+## 결정 11-4: API 클라이언트 타입 안정성
+
+**날짜**: 2025-12-11
+
+### 컨텍스트
+
+API 클라이언트의 타입 안정성을 어떻게 보장할지 결정해야 함. 응답 타입을 명시적으로 지정하여 타입 안정성을 확보해야 함
+
+### 결정
+
+**제네릭 사용**
+
+- 각 메서드에서 제네릭 타입 파라미터 사용
+- 호출 시 응답 타입을 명시적으로 지정
+- TypeScript의 타입 추론 활용
+
+### 근거
+
+- **타입 안정성**: 제네릭으로 응답 타입을 명시하여 타입 안정성 확보
+- **명확성**: 호출 시점에 응답 타입을 명시하여 코드 가독성 향상
+- **유연성**: API 응답 구조에 따라 자유롭게 타입 지정 가능
+- **IDE 지원**: 타입 추론으로 자동완성 및 타입 체크 지원
+
+### 구조
+
+```typescript
+// shared/api/client.ts
+class ApiClient {
+  async get<T>(url: string): Promise<T> {
+    // ...
+  }
+
+  async post<T>(url: string, data?: unknown): Promise<T> {
+    // ...
+  }
+}
+```
+
+### 사용 예시
+
+```typescript
+interface Product {
+  id: number;
+  name: string;
+}
+
+// 응답 타입을 명시적으로 지정
+const products = await apiClient.get<Product[]>('/api/products');
+```
+
+### 대안 검토
+
+#### 대안 1: ApiResponse 래퍼 타입
+
+```typescript
+interface ApiResponse<T> {
+  data: T;
+  status: number;
+  message?: string;
+}
+
+const response = await apiClient.get<ApiResponse<Product[]>>('/api/products');
+const products = response.data;
+```
+
+**장점:**
+
+- 응답 구조를 명확히 정의
+- 메타데이터(status, message 등) 포함 가능
+- 일관된 응답 구조
+
+**단점:**
+
+- API 응답 구조가 이미 정해져 있을 수 있음 (백엔드가 직접 데이터를 반환하는 경우)
+- 불필요한 추상화일 수 있음
+- 모든 API가 같은 구조를 사용하지 않을 수 있음
+
+**선택하지 않은 이유:**
+
+- API 응답 구조는 백엔드에 따라 다름
+- 제네릭으로 직접 타입 지정하는 것이 더 유연함
+- 필요 시 나중에 추가 가능
+
+#### 대안 2: 타입 추론만 사용
+
+```typescript
+const products = await apiClient.get('/api/products');
+// 타입이 any 또는 unknown
+```
+
+**장점:**
+
+- 코드가 간단함
+
+**단점:**
+
+- 타입 안정성 부족
+- 타입 체크 불가능
+- IDE 지원 부족
+
+**선택하지 않은 이유:**
+
+- 타입 안정성이 핵심 요구사항
+- TypeScript의 이점을 활용해야 함
+
+### 코드 위치
+
+- API 클라이언트: `src/shared/api/client.ts`
+
+---
+
+## 결정 11-5: API 클라이언트 인스턴스 관리
+
+**날짜**: 2025-12-11
+
+### 컨텍스트
+
+API 클라이언트 인스턴스를 어떻게 관리할지 결정해야 함. 싱글톤으로 하나의 인스턴스만 사용할지, 필요 시 인스턴스를 생성할지 결정해야 함
+
+### 결정
+
+**싱글톤 패턴**
+
+- 하나의 인스턴스만 생성하여 export
+- 모든 곳에서 같은 인스턴스 사용
+- 생성자에서 설정을 주입받을 수 있도록 설계 (확장성)
+
+### 근거
+
+- **일관성**: 싱글톤으로 모든 곳에서 같은 인스턴스 사용
+- **간편성**: 매번 인스턴스를 생성할 필요 없음
+- **메모리 효율**: 하나의 인스턴스만 유지하여 메모리 효율적
+- **확장성**: 필요 시 설정을 주입받을 수 있어 확장 가능
+
+### 구조
+
+```typescript
+// shared/api/client.ts
+class ApiClient {
+  private baseUrl: string;
+
+  constructor(baseUrl?: string) {
+    this.baseUrl = baseUrl || API_CONFIG.BASE_URL;
+  }
+
+  async get<T>(url: string): Promise<T> {
+    // ...
+  }
+}
+
+// 싱글톤 인스턴스 export
+export const apiClient = new ApiClient();
+```
+
+### 사용 예시
+
+```typescript
+// 모든 곳에서 같은 인스턴스 사용
+import { apiClient } from '@/shared/api/client';
+
+const products = await apiClient.get<Product[]>('/api/products');
+```
+
+### 대안 검토
+
+#### 대안 1: 인스턴스 생성 방식
+
+```typescript
+// 매번 인스턴스 생성
+const apiClient = new ApiClient(BASE_URL);
+```
+
+**장점:**
+
+- 여러 인스턴스 생성 가능
+- 각 인스턴스마다 다른 설정 가능 (다른 BASE_URL 등)
+- 테스트 시 mock 인스턴스 생성 용이
+
+**단점:**
+
+- 매번 인스턴스 생성 필요
+- 현재 프로젝트에서 여러 인스턴스가 필요한 경우 없음
+- 코드가 장황해질 수 있음
+
+**선택하지 않은 이유:**
+
+- 현재는 하나의 API 클라이언트만 필요
+- 싱글톤이 더 간편하고 일관성 있음
+- 필요 시 팩토리 함수로 확장 가능
+
+#### 대안 2: 팩토리 함수
+
+```typescript
+export function createApiClient(baseUrl?: string) {
+  return new ApiClient(baseUrl);
+}
+
+const apiClient = createApiClient();
+```
+
+**장점:**
+
+- 인스턴스 생성과 싱글톤의 중간 형태
+- 필요 시 여러 인스턴스 생성 가능
+
+**단점:**
+
+- 현재 프로젝트에서 필요 여부 불명확
+- 복잡도 증가
+
+**선택하지 않은 이유:**
+
+- 현재는 싱글톤으로 충분
+- 필요 시 나중에 팩토리 함수로 변경 가능
+
+### 코드 위치
+
+- API 클라이언트: `src/shared/api/client.ts`
