@@ -49,7 +49,8 @@ src/
   shared/                        # 공통 사용
     components/                   # 공통 컴포넌트
       ErrorBoundary.tsx
-      Loading.tsx
+      AsyncBoundary.tsx
+      # ... 기타 공용 컴포넌트
     hooks/                       # 공통 커스텀 훅
     utils/                       # 유틸 함수
     types/                       # 공통 타입 정의
@@ -76,6 +77,7 @@ src/
 ### 에러 처리
 
 - **ErrorBoundary**: 루트 레이아웃에 전역 ErrorBoundary, 필요 시 피쳐별 추가
+- **AsyncBoundary**: ErrorBoundary와 Suspense를 결합한 컴포넌트 (비동기 데이터 페칭과 에러 처리 통합)
 - **Suspense**: 각 피쳐 페이지에서 데이터 페칭 영역을 Suspense로 감싸기
 
 ### 스타일링
