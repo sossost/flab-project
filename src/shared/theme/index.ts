@@ -1,26 +1,31 @@
+/**
+ * 프로젝트 디자인 테마
+ *
+ * CSS 변수를 참조하여 Server Components와 Client Components 모두에서 사용 가능합니다.
+ */
 export const theme = {
   colors: {
-    primary: '#000000',
-    secondary: '#666666',
-    background: '#ffffff',
-    text: '#000000',
-    textSecondary: '#666666',
-    border: '#e0e0e0',
-    error: '#ff0000',
-    success: '#00ff00',
+    primary: 'var(--color-primary)',
+    secondary: 'var(--color-secondary)',
+    background: 'var(--color-background)',
+    text: 'var(--color-text)',
+    textSecondary: 'var(--color-text-secondary)',
+    border: 'var(--color-border)',
+    error: 'var(--color-error)',
+    success: 'var(--color-success)',
   },
   spacing: {
-    xs: '4px',
-    sm: '8px',
-    md: '16px',
-    lg: '24px',
-    xl: '32px',
+    xs: 'var(--spacing-xs)',
+    sm: 'var(--spacing-sm)',
+    md: 'var(--spacing-md)',
+    lg: 'var(--spacing-lg)',
+    xl: 'var(--spacing-xl)',
   },
   borderRadius: {
-    sm: '4px',
-    md: '8px',
-    lg: '12px',
-    full: '9999px',
+    sm: 'var(--radius-sm)',
+    md: 'var(--radius-md)',
+    lg: 'var(--radius-lg)',
+    full: 'var(--radius-full)',
   },
 } as const;
 
