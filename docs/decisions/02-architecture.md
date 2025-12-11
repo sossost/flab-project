@@ -727,91 +727,131 @@ app/
 
 ### 컨텍스트
 
-Emotion을 사용한 스타일링에서 컬러, 타이포그래피 등 디자인 토큰을 어떻게 관리할지 결정해야 함. 로딩 스피너 등 공용 컴포넌트에서 컬러 스킴이 필요함
+Emotion을 사용한 스타일링에서 컬러, 타이포그래피 등 디자인 토큰을 어떻게 관리할지 결정해야 함. 로딩 스피너 등 공용 컴포넌트에서 컬러 스킴이 필요함. Next.js App Router 환경에서 Server Components와 Client Components 모두에서 사용 가능한 방식이 필요함
 
 ### 결정
 
-**Emotion Theme 사용**
+**CSS 변수 + TypeScript 객체 매핑 방식**
 
-- Emotion의 `ThemeProvider`와 `useTheme` 훅 사용
-- 테마 객체를 TypeScript로 정의하여 타입 안정성 확보
-- 다크모드는 현재 구현하지 않지만, 확장 가능한 구조로 설계
+- CSS 변수(CSS Custom Properties)를 `globals.css`에 정의
+- TypeScript 객체에서 CSS 변수를 참조하여 타입 안정성 확보
+- `useTheme` 훅 사용하지 않음, 테마 객체를 직접 import하여 사용
+- 다크모드는 CSS 변수로 확장 가능한 구조로 설계
 
 ### 근거
 
-1. **Emotion과의 자연스러운 통합**: Emotion의 네이티브 기능으로 `theme` prop을 통해 모든 컴포넌트에서 접근 가능
-2. **타입 안정성**: TypeScript로 테마 타입을 정의하여 자동완성과 타입 체크 제공
-3. **컴포넌트 접근성**: `useTheme` 훅이나 `theme` prop을 통해 모든 컴포넌트에서 쉽게 접근
-4. **확장성**: 다크모드 추가 시 테마 객체만 확장하면 됨
-5. **일관성**: 프로젝트 전반에서 동일한 디자인 토큰 사용 보장
+1. **Server Components 호환성**: CSS 변수는 브라우저 네이티브 기능으로 Server Components에서도 사용 가능. `useTheme`은 React Context에 의존하여 Client Components에서만 사용 가능
+2. **성능**: 다크모드 전환 시 CSS 변수는 브라우저 레벨에서 처리되어 리액트 리렌더링이 발생하지 않음. `useTheme`은 Context 업데이트로 모든 컴포넌트가 리렌더링됨
+3. **타입 안정성**: TypeScript 객체로 CSS 변수를 매핑하여 자동완성과 타입 체크 제공
+4. **복잡도 제거**: `ThemeProvider`, `useTheme`, 타입 확장 등 보일러플레이트 불필요. 단순히 import하여 사용
+5. **확장성**: CSS 변수로 다크모드 구현이 간단하고, 테마 객체는 CSS 변수 참조만 하면 됨
 
 ### 대안 검토
 
-#### 1. CSS 변수 (CSS Custom Properties)
+#### 1. Emotion Theme (`useTheme`)
 
 **장점:**
 
-- CSS와 JavaScript 모두에서 사용 가능
-- 런타임에 동적으로 변경 가능 (다크모드 전환 등)
-- 브라우저 네이티브 기능
-
-**단점:**
-
-- TypeScript 타입 안정성이 약함
-- Emotion과의 통합이 자연스럽지 않음
-- CSS 변수와 TypeScript 타입을 별도로 관리해야 함
-
-#### 2. TypeScript 상수 파일
-
-**장점:**
-
-- 타입 안정성
-- 단순하고 명확함
-- 의존성 없음
-
-**단점:**
-
-- Emotion과 통합 시 수동으로 import 필요
-- 런타임 변경이 어려움 (다크모드 전환 등)
-- 컴포넌트에서 접근이 불편함 (`import theme from '@/shared/theme'`)
-
-#### 3. 조합 방식 (CSS 변수 + TypeScript 상수)
-
-**장점:**
-
-- CSS와 JavaScript 모두에서 사용 가능
+- Emotion의 네이티브 기능으로 통합 용이
 - 타입 안정성 확보
 
 **단점:**
 
-- 중복 관리 가능성
-- 복잡도 증가
+- **Server Components에서 사용 불가** (치명적): React Context에 의존하여 Client Components에서만 사용 가능
+- **성능 이슈**: 다크모드 전환 시 Context 업데이트로 모든 컴포넌트 리렌더링
+- **복잡도 증가**: `ThemeProvider`, `useTheme`, 타입 확장 등 보일러플레이트 필요
+- **Next.js App Router와 상극**: Server Components를 기본으로 사용하는 환경에 부적합
+
+#### 2. CSS 변수만 사용
+
+**장점:**
+
+- 브라우저 네이티브 기능
+- Server Components에서도 사용 가능
+- 성능 우수
+
+**단점:**
+
+- TypeScript 타입 안정성이 약함
+- 자동완성 지원 어려움
+
+#### 3. TypeScript 상수 파일 (하드코딩)
+
+**장점:**
+
+- 타입 안정성
+- 단순함
+
+**단점:**
+
+- Server Components에서 사용 가능하지만, 다크모드 전환 시 런타임 변경 어려움
+- CSS 변수와 별도 관리 필요
 
 ### 테마 구조
 
+**CSS 변수 정의 (`globals.css`):**
+
+```css
+:root {
+  --color-primary: #000000;
+  --color-secondary: #666666;
+  --color-background: #ffffff;
+  --color-text: #000000;
+  --spacing-md: 16px;
+  --radius-sm: 4px;
+  /* ... 기타 CSS 변수 */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-primary: #ffffff;
+    --color-background: #000000;
+    /* ... 다크모드 값 */
+  }
+}
+```
+
+**TypeScript 객체 매핑 (`src/shared/theme/index.ts`):**
+
 ```typescript
-// src/shared/theme/index.ts
 export const theme = {
   colors: {
-    primary: '#000000',
-    secondary: '#666666',
-    background: '#ffffff',
-    text: '#000000',
-    // ... 기타 컬러
+    primary: 'var(--color-primary)',
+    secondary: 'var(--color-secondary)',
+    background: 'var(--color-background)',
+    text: 'var(--color-text)',
   },
-  // ... 기타 디자인 토큰
+  spacing: {
+    md: 'var(--spacing-md)',
+  },
+  borderRadius: {
+    sm: 'var(--radius-sm)',
+  },
 } as const;
+```
+
+**사용 방법:**
+
+```typescript
+// Server Components
+<div style={{ color: 'var(--color-primary)' }}>
+
+// Client Components (Emotion)
+import { theme } from '@/shared/theme';
+css`color: ${theme.colors.primary};`
 ```
 
 ### 확장성 고려사항
 
-- 다크모드는 현재 구현하지 않지만, 테마 구조는 확장 가능하게 설계
-- 향후 다크모드 추가 시 테마 객체에 `dark` 속성 추가 또는 테마 함수로 확장 가능
+- 다크모드는 CSS 변수로 구현 (`@media (prefers-color-scheme: dark)` 또는 `[data-theme="dark"]`)
+- 테마 객체는 CSS 변수 참조만 하므로 다크모드 추가 시 CSS 변수만 변경하면 자동 반영
+- 컴포넌트 코드 변경 불필요
 
 ### 코드 위치
 
-- 테마 정의: `src/shared/theme/index.ts`
-- ThemeProvider: `src/app/layout.tsx` 또는 별도 Provider 컴포넌트
+- CSS 변수 정의: `src/app/globals.css`
+- 테마 객체: `src/shared/theme/index.ts`
+- 사용: `import { theme } from '@/shared/theme'` (ThemeProvider 불필요)
 
 ---
 
