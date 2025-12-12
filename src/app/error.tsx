@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 
 import { useQueryErrorResetBoundary } from '@tanstack/react-query';
 
-import ErrorFallback from '@/shared/components/ErrorFallback';
+import { ErrorFallback } from '@/shared/components';
 
 export default function Error({
   error,
