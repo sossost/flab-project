@@ -45,6 +45,9 @@ src/
       search-without-submit/     # 피쳐: 검색 (debounce)
     layout.tsx                   # 루트 레이아웃
     page.tsx                     # 홈 페이지
+    error.tsx                    # 전역 에러 처리
+    global-error.tsx             # 루트 레이아웃 에러 처리
+    not-found.tsx                # 404 에러 처리
     globals.css                  # 전역 스타일
   shared/                        # 공통 사용
     components/                   # 공통 컴포넌트
@@ -76,9 +79,20 @@ src/
 
 ### 에러 처리
 
-- **ErrorBoundary**: 루트 레이아웃에 전역 ErrorBoundary, 필요 시 피쳐별 추가
-- **AsyncBoundary**: ErrorBoundary와 Suspense를 결합한 컴포넌트 (비동기 데이터 페칭과 에러 처리 통합)
-- **Suspense**: 각 피쳐 페이지에서 데이터 페칭 영역을 Suspense로 감싸기
+**다층적 에러 방어 전략**
+
+1. **React Query 전역 에러 핸들러**
+   - `QueryCache` 레벨에서 에러 감지 및 로깅
+   - 개발 환경에서 상세 에러 로그 출력
+
+2. **Next.js 예외 처리 파일 시스템**
+   - **`app/error.tsx`**: 페이지 및 레이아웃 레벨 에러 처리 (Server/Client Components 모두 지원)
+   - **`app/global-error.tsx`**: Root Layout 에러 처리 (최후 방어선)
+   - **`app/not-found.tsx`**: 404 에러 처리
+
+3. **ErrorBoundary (보조적 사용)**
+   - 특정 클라이언트 컴포넌트 트리의 에러 격리
+   - 복잡한 위젯, 차트 등 독립적인 피쳐 섹션에서 사용
 
 ### 스타일링
 
