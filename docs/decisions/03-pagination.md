@@ -122,3 +122,117 @@
    - **에러 숨김**: 구현이 단순하지만 사용자가 에러 상황을 인지하지 못함
    - **재시도 없음**: 구현이 단순하지만 사용자가 직접 해결할 방법이 없음
    - **선택하지 않은 이유**: 사용자 경험을 해침, 명확한 피드백과 재시도 기능이 필수적
+
+---
+
+## 결정 3: 페이지네이션 방식 선택
+
+**날짜**: 2025-12-12
+
+### 컨텍스트
+
+페이지네이션 피쳐를 구현하기 위해 어떤 페이지네이션 방식을 사용할지 결정해야 함. 페이지 번호를 표시하고 특정 페이지로 이동할 수 있는 전통적인 페이지네이션 UI를 구현해야 함
+
+### 결정
+
+**Page-based 방식 (page, limit) 선택**
+
+- **API 파라미터**: `page`, `limit`
+- **예시**: `GET /api/posts?page=1&limit=10`
+- **페이지 번호**: 1부터 시작
+
+### 근거
+
+- **직관성**: 페이지 번호와 API 파라미터가 직접 매핑되어 직관적
+- **프론트엔드 구현 단순**: page 상태가 UI와 직접 연결되어 구현이 단순함
+- **UI 표시 용이**: "1페이지, 2페이지" 형태로 자연스럽게 표시 가능
+- **전체 페이지 수 계산 단순**: `totalPages = Math.ceil(total / limit)`로 간단히 계산 가능
+- **사용자 경험**: 사용자가 원하는 페이지 번호로 바로 이동 가능
+
+### API 구조
+
+**요청:**
+
+```
+GET /api/posts?page=1&limit=10
+```
+
+**응답:**
+
+```typescript
+interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+interface PaginatedResponse<T> {
+  data: T[];
+  meta: PaginationMeta;
+}
+```
+
+### 프론트엔드 구현 예시
+
+```typescript
+// 상태 관리
+const [page, setPage] = useState(1);
+const limit = 10;
+
+// API 호출
+const { data } = useQuery({
+  queryKey: ['posts', page],
+  queryFn: () => getPosts({ page, limit }),
+});
+
+// 페이지 이동
+const goToPage = (newPage: number) => {
+  setPage(newPage);
+};
+
+// 전체 페이지 수
+const totalPages = data.meta.totalPages;
+```
+
+### 대안 검토
+
+#### 대안 1: Offset-based 방식 (offset, limit)
+
+**특징:**
+
+- API 파라미터: `offset`, `limit`
+- 예시: `GET /api/posts?offset=0&limit=10`
+
+**장점:**
+
+- 서버 구현이 단순 (offset을 그대로 사용)
+- 더 유연함 (임의의 offset 지정 가능)
+
+**단점:**
+
+- 페이지 번호로 변환 필요 (`page = offset / limit + 1`)
+- 전체 페이지 수 계산 시 추가 로직 필요
+- UI 표시가 덜 직관적 ("offset 0, offset 10" vs "1페이지, 2페이지")
+- offset이 클수록 성능 저하 (OFFSET이 크면 DB 부하)
+- 프론트엔드에서 page → offset 변환 로직 필요
+
+**선택하지 않은 이유:**
+
+- 페이지네이션 UI에서는 페이지 번호가 핵심인데, offset은 이를 직접 표현하지 못함
+- 프론트엔드 구현이 더 복잡해짐
+- Page-based가 페이지네이션 목적에 더 적합
+
+### 서버 구현 참고
+
+서버에서는 page를 offset으로 변환하여 사용:
+
+```typescript
+// 서버에서 page를 offset으로 변환
+const offset = (page - 1) * limit;
+```
+
+### 코드 위치
+
+- 공통 타입: `src/shared/types/post.ts` (PaginatedResponse, PaginationMeta)
+- 피쳐별 API: `src/app/list-pagination/api/posts.ts`
