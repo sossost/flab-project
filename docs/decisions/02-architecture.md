@@ -1640,3 +1640,165 @@ const apiClient = createApiClient();
 ### 코드 위치
 
 - API 클라이언트: `src/shared/api/client.ts`
+
+---
+
+## 결정 12: 전역 에러 및 예외 처리 전략
+
+**날짜**: 2025-12-13
+
+### 컨텍스트
+
+Next.js App Router 환경에서 발생할 수 있는 런타임 에러(500)와 리소스 부재(404) 상황을 포괄적으로 처리해야 함. Server/Client Components 에러, Root Layout 에러, 그리고 비동기 데이터 fetching 에러를 통합 관리하되, 사용자 경험을 위해 에러의 영향 범위를 적절히 격리해야 함
+
+### 결정
+
+**다층적 에러 방어 전략 (Multi-Layered Error Strategy)**
+
+1.  **React Query 전역 에러 핸들러 (Data Layer)**
+    - **구현:** React Query v5 스펙에 맞춰 `QueryCache` 레벨에서 에러 감지
+    - **정책:** 개발 환경에선 상세 로그 출력, 치명적 에러는 `throwOnError: true`로 렌더링 에러로 전파
+    - **생성:** SSR 환경 데이터 누수 방지를 위해 `useState`로 클라이언트 인스턴스 관리
+
+2.  **Next.js 예외 처리 파일 시스템 (Page/Global Layer)**
+    - **`app/error.tsx`**: (메인 전략) 대부분의 페이지 및 레이아웃 에러 처리. Server Components 에러 포착 가능
+    - **`app/global-error.tsx`**: (최후 방어선) Root Layout 에러 처리. 흰 화면(White Screen) 방지
+    - **`app/not-found.tsx`**: (404) 존재하지 않는 리소스 접근 처리
+
+3.  **ErrorBoundary (Component Layer / 보조적 사용)**
+    - **역할:** 특정 클라이언트 컴포넌트 트리의 에러 격리 (Granular Isolation)
+    - **사용 대상:** 복잡한 인터랙션이 있는 위젯, 차트, 독립적인 피쳐 섹션 등 **Client Components**
+    - **목적:** 작은 위젯의 에러가 페이지 전체(`error.tsx`)를 덮어버리는 것을 방지하여 나머지 콘텐츠는 정상적으로 노출
+
+4.  **에러 복구 전략**
+    - 재시도(`reset`) 시 **Next.js 컴포넌트 리렌더링**과 **React Query 캐시 초기화**를 동시에 수행하여 데이터 일관성 보장
+    - Global Error 발생 시에는 \*\*Hard Reload(`<a>` 태그 이동)\*\*를 통해 애플리케이션 컨텍스트를 완전히 재로딩
+
+### 근거
+
+- **Server Components 지원**: React의 `ErrorBoundary`는 Server Components의 에러를 잡지 못하는 한계가 있음. 따라서 Next.js의 `error.tsx`를 메인 에러 핸들러로 채택하여 서버/클라이언트 에러를 모두 방어
+- **사용자 경험(UX) 보호**: 사소한 위젯의 에러로 인해 페이지 전체가 에러 화면으로 바뀌는 것은 좋지 않음. 중요도가 낮은 클라이언트 컴포넌트에는 `ErrorBoundary`를 사용하여 에러 영향을 국소화
+- **데이터 일관성**: 에러 발생 후 재시도(`reset`) 시, 이전의 잘못된 데이터가 캐시에 남아 다시 에러를 유발하는 것을 방지하기 위해 `queryClient`의 캐시 초기화를 동반
+- **안전장치 & 복구**: `error.tsx`가 잡지 못하는 Root Layout 레벨의 에러를 대비해 `global-error.tsx`를 구현. 이때 라우팅 시스템 장애를 대비하여 Soft Navigation 대신 **강제 새로고침(Hard Reload)** 전략 채택
+
+### React Query 전역 에러 핸들러 (v5 호환 & SSR 격리)
+
+**구현 방식:**
+
+```typescript
+// src/shared/providers/QueryClientProvider.tsx
+'use client';
+
+import { useState } from 'react';
+import { QueryClient, QueryCache, QueryClientProvider } from '@tanstack/react-query';
+
+export default function Providers({ children }: { children: React.ReactNode }) {
+  // SSR 환경에서 요청 간 데이터 공유(누수)를 막기 위해 useState로 생성
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        queryCache: new QueryCache({
+          onError: (error) => {
+            if (process.env.NODE_ENV === 'development') {
+              console.error('🔴 [React Query Error]:', error);
+            }
+          },
+        }),
+        defaultOptions: {
+          queries: {
+            retry: false,
+            throwOnError: true,
+          },
+        },
+      })
+  );
+
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+}
+```
+
+### Next.js error.tsx (전역 렌더링 에러 처리)
+
+**구현 방식:**
+
+```typescript
+// src/app/error.tsx
+'use client';
+
+import { useEffect } from 'react';
+import { useQueryErrorResetBoundary } from '@tanstack/react-query';
+import { ErrorFallback } from '@/shared/components';
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  const { reset: resetQueryError } = useQueryErrorResetBoundary();
+
+  useEffect(() => {
+    console.error('💥 [Global Rendering Error]:', error);
+  }, [error]);
+
+  return (
+    <ErrorFallback
+      error={error}
+      resetError={() => {
+        resetQueryError();
+        reset();
+      }}
+    />
+  );
+}
+```
+
+### Next.js global-error.tsx (최후 방어선)
+
+**구현 방식:**
+
+```typescript
+// src/app/global-error.tsx
+'use client';
+
+import { ErrorFallback } from '@/shared/components';
+
+export default function GlobalError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return (
+    <html>
+      <body>
+        <ErrorFallback
+          error={error}
+          resetError={reset}
+          isGlobalError // ✅ true 전달 -> a 태그 사용 (Hard Reload)
+        />
+      </body>
+    </html>
+  );
+}
+```
+
+### 비교표
+
+| 구분                       | ErrorBoundary      | Next.js error.tsx    | global-error.tsx         |
+| :------------------------- | :----------------- | :------------------- | :----------------------- |
+| **Server Components 에러** | ❌ 불가능          | ✅ 가능              | ✅ 가능                  |
+| **Client Components 에러** | ✅ 가능            | ✅ 가능              | ✅ 가능                  |
+| **Root Layout 에러**       | ❌ 불가능          | ❌ 불가능            | ✅ 가능                  |
+| **영향 범위**              | 특정 컴포넌트 트리 | 라우트 세그먼트 전체 | 애플리케이션 전체        |
+| **복구 방식**              | 컴포넌트 리셋      | SPA 리렌더링 (Soft)  | **강제 새로고침 (Hard)** |
+
+### 코드 위치
+
+- React Query 설정: `src/shared/providers/QueryClientProvider.tsx`
+- 전역 에러 처리: `src/app/error.tsx`
+- 루트 에러 처리: `src/app/global-error.tsx`
+- 404 처리: `src/app/not-found.tsx`
+- 에러 UI 컴포넌트: `src/shared/components/ErrorFallback.tsx`
