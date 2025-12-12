@@ -1,6 +1,6 @@
 'use client';
 
-import { ButtonHTMLAttributes, type Ref } from 'react';
+import { ElementType, ComponentProps } from 'react';
 
 import { css, keyframes, type SerializedStyles } from '@emotion/react';
 
@@ -15,14 +15,18 @@ const spin = keyframes`
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
-type ButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'ref'> & {
+type ButtonOwnProps<E extends ElementType = 'button'> = {
+  as?: E;
   variant?: ButtonVariant;
   size?: ButtonSize;
   loading?: boolean;
-  ref?: Ref<HTMLButtonElement>;
 };
 
-export default function Button({
+type ButtonProps<E extends ElementType> = ButtonOwnProps<E> &
+  Omit<ComponentProps<E>, keyof ButtonOwnProps>;
+
+export default function Button<E extends ElementType = 'button'>({
+  as,
   variant = 'primary',
   size = 'md',
   loading = false,
@@ -31,15 +35,18 @@ export default function Button({
   className,
   ref,
   ...props
-}: ButtonProps) {
+}: ButtonProps<E>) {
+  const Component = as || 'button';
+  const isButton = Component === 'button';
   const isDisabled = disabled || loading;
+
   const variantStyle = VARIANT_STYLES[variant];
   const spinnerColors = getLoadingSpinnerColor(variant);
 
   return (
-    <button
+    <Component
       ref={ref}
-      disabled={isDisabled}
+      disabled={isButton ? isDisabled : undefined}
       aria-disabled={isDisabled}
       aria-busy={loading}
       aria-label={loading ? '로딩 중' : undefined}
@@ -56,18 +63,23 @@ export default function Button({
         border-radius: ${theme.borderRadius.md};
         cursor: pointer;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
         border: none;
         outline: none;
         background: none;
+        text-decoration: none;
+        color: inherit;
 
-        &:disabled {
+        ${isDisabled &&
+        css`
           opacity: 0.5;
           cursor: not-allowed;
-        }
+          pointer-events: none;
+        `}
 
         ${variantStyle.base}
 
-        &:not(:disabled):hover {
+        &:not([aria-disabled='true']):hover {
           ${variantStyle.hover}
         }
 
@@ -107,10 +119,11 @@ export default function Button({
       >
         {children}
       </span>
-    </button>
+    </Component>
   );
 }
 
+// --- 하단 상수는 기존과 동일하므로 그대로 두시면 됩니다 ---
 const SIZE_MAP: Record<ButtonSize, { padding: string; fontSize: string; height: string }> = {
   sm: {
     padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
@@ -146,7 +159,7 @@ const VARIANT_STYLES: Record<ButtonVariant, { base: SerializedStyles; hover: Ser
       border: 1px solid transparent;
     `,
     hover: css`
-      background-color: color-mix(in srgb, ${theme.colors.text} 10%, transparent);
+      background-color: color-mix(in srgb, ${theme.colors.secondary} 80%, transparent);
     `,
   },
   outline: {
