@@ -11,8 +11,6 @@ export function PostListLayout({ children }: PropsWithChildren) {
     <ul
       css={css`
         list-style: none;
-        padding-top: ${theme.spacing.md};
-        padding-bottom: ${theme.spacing.md};
         gap: ${theme.spacing.md};
         margin: 0;
         display: flex;
