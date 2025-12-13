@@ -1802,3 +1802,64 @@ export default function GlobalError({
 - 루트 에러 처리: `src/app/global-error.tsx`
 - 404 처리: `src/app/not-found.tsx`
 - 에러 UI 컴포넌트: `src/shared/components/ErrorFallback.tsx`
+
+---
+
+## 결정 13: React Query 키 관리 전략 (Query Key Factory)
+
+**날짜**: 2025-12-13
+
+### 컨텍스트
+
+React Query를 사용할 때 쿼리 키는 데이터 캐싱과 무효화(Invalidation)를 위한 식별자 역할을 함. 이를 단순 문자열이나 배열 리터럴(예: `['posts', 1]`)로 각 컴포넌트에 하드코딩하여 사용할 경우, 다음과 같은 문제가 발생함.
+
+1.  **휴먼 에러**: 오타(`'post'` vs `'posts'`)로 인해 캐시가 공유되지 않거나 갱신되지 않음.
+2.  **유지보수 어려움**: 특정 도메인의 키 구조를 변경하려면 프로젝트 전체를 검색해서 수정해야 함.
+3.  **무효화 복잡성**: `invalidateQueries` 사용 시 어떤 키를 타겟팅해야 할지 기억하기 어려움.
+
+### 결정
+
+**Query Key Factory 패턴 도입 (객체 기반 중앙 관리)**
+
+1.  **중앙 집중화**: `src/shared/constants/queryKeys.ts` 파일 하나에서 모든 쿼리 키를 객체 형태로 관리함.
+2.  **팩토리 함수 사용**: 동적인 파라미터(id, page, filter 등)가 필요한 경우, 함수 형태로 정의하여 일관된 키 생성을 보장함.
+3.  **계층 구조화**: **"도메인(posts) \> 범위(list/detail) \> 파라미터"** 순의 계층 구조를 강제하여, 상위 키만으로 하위 쿼리들을 일괄 무효화할 수 있도록 설계함.
+
+### 근거
+
+- **타입 안전성 (Type Safety)**: TypeScript의 도움을 받아 키 작성 시 자동 완성을 지원받고 오타를 방지할 수 있음.
+- **응집도 향상**: 데이터 의존성 관련 로직이 한곳에 모여 있어 파악하기 쉬움.
+- **확장성**: 추후 '댓글', '좋아요' 등 연관 데이터가 늘어나도 기존 구조(posts.detail) 아래에 쉽게 확장 가능 (`posts.comments(id)`).
+
+### 구현 예시
+
+**1. 팩토리 정의 (`queryKeys.ts`)**
+
+```typescript
+export const queryKeys = {
+  posts: {
+    all: ['posts'] as const,
+    lists: () => [...queryKeys.posts.all, 'list'] as const,
+    list: (page: number, filters?: object) =>
+      [...queryKeys.posts.lists(), { page, ...filters }] as const,
+  },
+};
+```
+
+**2. 사용 (`usePostList.ts`)**
+
+```typescript
+useSuspenseQuery({
+  queryKey: queryKeys.posts.list(page, filters), // ✅ 오타 걱정 없음
+  queryFn: () => ...
+});
+```
+
+**3. 무효화 (`Mutation`)**
+
+```typescript
+// 글 작성 후 목록만 갱신하고 싶을 때
+queryClient.invalidateQueries({
+  queryKey: queryKeys.posts.lists(),
+});
+```
