@@ -18,16 +18,21 @@ type ErrorFallbackProps = {
   error: Error;
   resetError: () => void;
   isGlobalError?: boolean;
-
+  errorMessage?: string;
   redirectButton?: RedirectButtonConfig;
+  variant?: 'page' | 'widget';
 };
 
 export function ErrorFallback({
   error,
   resetError,
+  errorMessage,
   isGlobalError = false,
   redirectButton = { href: '/', label: '홈으로 이동' },
+  variant = 'page',
 }: ErrorFallbackProps) {
+  const isPage = variant === 'page';
+
   return (
     <div
       css={css`
@@ -35,16 +40,20 @@ export function ErrorFallback({
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        min-height: 100vh;
         padding: ${theme.spacing.lg};
         gap: ${theme.spacing.md};
         text-align: center;
+        height: 100%;
+        border: 1px solid ${theme.colors.border};
+        border-radius: ${theme.borderRadius.lg};
+
+        ${isPage ? 'min-height: 100vh;' : 'flex:1;'}
       `}
     >
       <h2
         css={css`
-          font-size: ${pxToRem(24)};
-          font-weight: bold;
+          font-size: ${isPage ? pxToRem(24) : pxToRem(16)};
+          font-weight: ${isPage ? 700 : 500};
           margin-bottom: ${theme.spacing.sm};
           color: ${theme.colors.text};
         `}
@@ -58,7 +67,7 @@ export function ErrorFallback({
           white-space: pre-wrap;
         `}
       >
-        {error.message || '알 수 없는 오류가 발생했습니다.'}
+        {errorMessage || error.message || '알 수 없는 오류가 발생했습니다.'}
       </p>
 
       <div

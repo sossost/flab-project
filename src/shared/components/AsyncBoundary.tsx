@@ -2,14 +2,14 @@
 
 import { Suspense, type ReactNode } from 'react';
 
-import { ErrorBoundary, type ErrorBoundaryFallback } from './ErrorBoundary';
+import { ErrorBoundary, ErrorBoundaryFallbackProps } from './ErrorBoundary';
 import { ErrorFallback } from './ErrorFallback';
 import Loading from './Loading';
 
 type AsyncBoundaryProps = {
   children: ReactNode;
   loadingFallback?: ReactNode;
-  errorFallback?: ErrorBoundaryFallback;
+  errorFallback?: (props: ErrorBoundaryFallbackProps) => ReactNode;
   onError?: (error: Error, errorInfo: { componentStack: string }) => void;
 };
 
@@ -23,7 +23,9 @@ type AsyncBoundaryProps = {
 export function AsyncBoundary({
   children,
   loadingFallback = <Loading />,
-  errorFallback = (error, resetError) => <ErrorFallback error={error} resetError={resetError} />,
+  errorFallback = ({ error, resetError }: ErrorBoundaryFallbackProps) => (
+    <ErrorFallback error={error} resetError={resetError} />
+  ),
   onError,
 }: AsyncBoundaryProps) {
   return (
