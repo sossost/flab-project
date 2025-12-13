@@ -33,7 +33,7 @@
 ```
 src/
   app/
-    (routes)/                    # 라우트 그룹 (선택적)
+    (features)/                    # 라우트 그룹 (선택적)
       list-pagination/           # 피쳐: 페이지네이션 목록 페이지
         page.tsx                 # 페이지 컴포넌트
         components/              # 해당 페이지 전용 컴포넌트
@@ -189,6 +189,8 @@ NEXT_PUBLIC_API_URL=http://localhost:3000/api
 
 - [프로젝트 세팅](./docs/decisions/01-project-setup.md)
 - [아키텍처](./docs/decisions/02-architecture.md)
+- [페이지네이션 피쳐](./docs/decisions/03-pagination.md)
+- [페이지네이션 피쳐](./docs/decisions/03-pagination.md)
 
 ## Learn More
 

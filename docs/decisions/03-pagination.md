@@ -38,7 +38,7 @@
 
 ### 코드 위치
 
-- 페이지네이션 컴포넌트: `src/app/list-pagination/components/Pagination.tsx`
+- 페이지네이션 컴포넌트: `src/app/(features)/list-pagination/components/Pagination.tsx`
 
 ---
 

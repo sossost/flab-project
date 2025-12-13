@@ -166,7 +166,7 @@ src/
 ```
 src/
   app/
-    (routes)/                    # 라우트 그룹 (선택적, 결정 5 참고)
+    (features)/                    # 라우트 그룹 (선택적, 결정 5 참고)
       list-pagination/           # 피쳐: 페이지네이션 목록 페이지
         page.tsx                 # 페이지 컴포넌트
         components/              # 해당 페이지 전용 컴포넌트
@@ -297,13 +297,13 @@ src/
 
 ### 컨텍스트
 
-Next.js App Router의 라우트 그룹 `(routes)` 사용 여부 결정
+Next.js App Router의 라우트 그룹 `(features)` 사용 여부 결정
 
 ### 결정
 
 **라우트 그룹 사용 (선택적)**
 
-- `(routes)` 그룹으로 피쳐 관련 라우트들을 묶음
+- `(features)` 그룹으로 피쳐 관련 라우트들을 묶음
 - 홈 페이지(`page.tsx`)는 그룹 밖에 유지
 - 레이아웃 구조가 복잡해지면 그룹 사용 고려
 
@@ -323,7 +323,7 @@ Next.js App Router에서 폴더명을 `(group-name)` 형식으로 감싸면 URL 
 
 ```
 app/
-  (routes)/              # URL에 포함되지 않음
+  (features)/              # URL에 포함되지 않음
     list-pagination/      # URL: /list-pagination
     list-infinite/        # URL: /list-infinite
   page.tsx                # URL: /
@@ -355,7 +355,7 @@ app/
 
 ### 코드 위치
 
-- 라우트 그룹: `src/app/(routes)/`
+- 라우트 그룹: `src/app/(features)/`
 
 ---
 
@@ -392,7 +392,9 @@ app/
 
 **Client Components에서:**
 
-- 페이지네이션: `useQuery` + `keepPreviousData` 옵션
+- 페이지네이션: `useSuspenseQuery` 사용 (Suspense 요구사항 충족)
+  - 참고: `useSuspenseQuery`는 `placeholderData` 옵션을 지원하지 않아 이전 데이터 유지가 제한적임
+  - React Query 캐시와 `staleTime` 설정으로 최적화
 - 무한스크롤: `useInfiniteQuery`
 - 검색 (submit 버튼): `useQuery` + `enabled` 옵션으로 submit 시에만 실행
 - 검색 (debounce): `useQuery` + debounced query key
