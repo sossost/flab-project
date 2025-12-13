@@ -11,6 +11,7 @@ type ErrorBoundaryProps = {
   children: ReactNode;
   fallback: (props: ErrorBoundaryFallbackProps) => ReactNode;
   onError?: (error: Error, errorInfo: { componentStack: string }) => void;
+  resetKeys?: unknown[];
 };
 
 type ErrorBoundaryState = {
@@ -48,6 +49,32 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     }
 
     this.props.onError?.(error, errorInfo);
+  }
+
+  componentDidUpdate(prevProps: ErrorBoundaryProps) {
+    if (!this.state.hasError) return;
+
+    const { resetKeys } = this.props;
+
+    if (!resetKeys) return;
+
+    if (this.isResetKeysChanged(prevProps.resetKeys, resetKeys)) {
+      this.resetError();
+    }
+  }
+
+  private isResetKeysChanged(prev: unknown[] | undefined, current: unknown[]): boolean {
+    if (prev === current) return false;
+    if (!prev) return true;
+    if (prev.length !== current.length) return true;
+
+    for (let i = 0; i < current.length; i++) {
+      if (prev[i] !== current[i]) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   resetError = () => {
