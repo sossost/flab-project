@@ -7,18 +7,26 @@ import { css } from '@emotion/react';
 import { theme } from '@/shared/theme';
 import { pxToRem } from '@/shared/utils';
 
-import Button from './Button';
+import { Button } from './Button';
 
-interface ErrorFallbackProps {
+type RedirectButtonConfig = {
+  href: string;
+  label: string;
+};
+
+type ErrorFallbackProps = {
   error: Error;
   resetError: () => void;
   isGlobalError?: boolean;
-}
 
-export default function ErrorFallback({
+  redirectButton?: RedirectButtonConfig;
+};
+
+export function ErrorFallback({
   error,
   resetError,
   isGlobalError = false,
+  redirectButton = { href: '/', label: '홈으로 이동' },
 }: ErrorFallbackProps) {
   return (
     <div
@@ -64,8 +72,8 @@ export default function ErrorFallback({
         </Button>
 
         {/* Global Error는 a 태그를 사용하여 Hard Reload 유도 */}
-        <Button as={isGlobalError ? 'a' : Link} variant="secondary" href="/">
-          홈으로 이동
+        <Button as={isGlobalError ? 'a' : Link} variant="secondary" href={redirectButton.href}>
+          {redirectButton.label}
         </Button>
       </div>
     </div>

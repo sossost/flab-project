@@ -25,7 +25,7 @@ type ButtonOwnProps<E extends ElementType = 'button'> = {
 type ButtonProps<E extends ElementType> = ButtonOwnProps<E> &
   Omit<ComponentProps<E>, keyof ButtonOwnProps>;
 
-export default function Button<E extends ElementType = 'button'>({
+export function Button<E extends ElementType = 'button'>({
   as,
   variant = 'primary',
   size = 'md',
