@@ -1,5 +1,9 @@
 'use client';
 
+import { useEffect } from 'react';
+
+import { useRouter } from 'next/navigation';
+
 import { css } from '@emotion/react';
 
 import { Spacing } from '@/shared/components';
@@ -11,8 +15,18 @@ import { usePostList } from '../hooks/usePostList';
 import { Pagination } from './Pagination';
 
 export function PaginationListContainer() {
+  const router = useRouter();
   const { currentPage, changePage, isPending } = usePagination();
   const { data } = usePostList(currentPage);
+  const totalPages = data.meta.totalPages;
+
+  useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) {
+      router.replace(`?page=${totalPages}`);
+    } else if (totalPages === 0 && currentPage > 1) {
+      router.replace('?page=1');
+    }
+  }, [currentPage, totalPages, router]);
 
   return (
     <section
