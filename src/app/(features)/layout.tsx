@@ -55,9 +55,12 @@ export default function FeatureLayout({ children }: { children: React.ReactNode 
       </header>
       <main
         css={css`
+          display: flex;
+          flex-direction: column;
           max-width: ${pxToRem(1200)};
           width: 100%;
           margin: 0 auto;
+          flex: 1;
         `}
       >
         {children}
