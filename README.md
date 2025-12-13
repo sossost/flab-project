@@ -44,7 +44,7 @@ src/
       search-with-submit/        # 피쳐: 검색 (submit 버튼)
       search-without-submit/     # 피쳐: 검색 (debounce)
     layout.tsx                   # 루트 레이아웃
-    page.tsx                     # 홈 페이지
+    page.tsx                     # 홈 페이지 (피쳐 목록)
     error.tsx                    # 전역 에러 처리
     global-error.tsx             # 루트 레이아웃 에러 처리
     not-found.tsx                # 404 에러 처리
@@ -117,7 +117,7 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+홈 페이지에서 각 피쳐(페이지네이션, 무한스크롤, 검색 등)로 이동할 수 있습니다.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
