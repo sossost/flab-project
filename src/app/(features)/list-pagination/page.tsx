@@ -23,7 +23,7 @@ export default async function ListPaginationPage({ searchParams }: ListPaginatio
       <AsyncBoundary
         loadingFallback={<PostListSkeleton />}
         errorFallback={PaginationListErrorFallback}
-        resetKeys={[searchParamsData]}
+        resetKeys={[searchParamsData.page]}
       >
         <PaginationListContainer />
       </AsyncBoundary>

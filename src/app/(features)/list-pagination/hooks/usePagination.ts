@@ -1,8 +1,12 @@
 'use client';
 
+import { useTransition } from 'react';
+
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 export function usePagination(key = 'page') {
+  const [isPending, startTransition] = useTransition();
+
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -13,8 +17,10 @@ export function usePagination(key = 'page') {
     const params = new URLSearchParams(searchParams);
     params.set(key, String(newPage));
 
-    router.push(`${pathname}?${params.toString()}`, { scroll: true });
+    startTransition(() => {
+      router.push(`${pathname}?${params.toString()}`, { scroll: true });
+    });
   };
 
-  return { currentPage, changePage };
+  return { currentPage, changePage, isPending };
 }
