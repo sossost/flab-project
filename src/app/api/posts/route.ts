@@ -25,11 +25,8 @@ export async function GET(request: NextRequest) {
       return createErrorResponse('데이터가 없습니다.');
     }
 
-    if (page > totalPages && totalPages > 0) {
-      return createErrorResponse(`page는 ${totalPages} 이하여야 합니다.`);
-    }
-
     const offset = (page - 1) * limit;
+
     const paginatedPosts = posts.slice(offset, offset + limit);
 
     const response: PaginatedResponse<Post> = {
