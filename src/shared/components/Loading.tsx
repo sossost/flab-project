@@ -13,9 +13,9 @@ const SIZE_MAP = {
 
 type LoadingSize = keyof typeof SIZE_MAP;
 
-interface LoadingProps {
+type LoadingProps = {
   size?: LoadingSize;
-}
+};
 
 export default function Loading({ size = 'md' }: LoadingProps) {
   return (

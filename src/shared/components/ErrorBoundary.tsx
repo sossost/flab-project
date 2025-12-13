@@ -2,16 +2,20 @@
 
 import { Component, type ReactNode } from 'react';
 
-interface ErrorBoundaryProps {
-  children: ReactNode;
-  fallback: ReactNode | ((error: Error, resetError: () => void) => ReactNode);
-  onError?: (error: Error, errorInfo: { componentStack: string }) => void;
-}
+export type ErrorBoundaryFallback =
+  | ReactNode
+  | ((error: Error, resetError: () => void) => ReactNode);
 
-interface ErrorBoundaryState {
+type ErrorBoundaryProps = {
+  children: ReactNode;
+  fallback: ErrorBoundaryFallback;
+  onError?: (error: Error, errorInfo: { componentStack: string }) => void;
+};
+
+type ErrorBoundaryState = {
   hasError: boolean;
   error: Error | null;
-}
+};
 
 /**
  * @param children - ErrorBoundary로 감쌀 자식 컴포넌트
@@ -20,7 +24,7 @@ interface ErrorBoundaryState {
  *   - 함수: (error, resetError) => ReactNode 형태
  * @param onError - 에러 발생 시 호출되는 콜백 함수 (로깅, 에러 리포팅 등에 사용)
  */
-export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
