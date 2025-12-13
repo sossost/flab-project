@@ -11,6 +11,7 @@ type AsyncBoundaryProps = {
   loadingFallback?: ReactNode;
   errorFallback?: (props: ErrorBoundaryFallbackProps) => ReactNode;
   onError?: (error: Error, errorInfo: { componentStack: string }) => void;
+  resetKeys?: unknown[];
 };
 
 /**
@@ -19,6 +20,7 @@ type AsyncBoundaryProps = {
  * @param loadingFallback - Suspense 로딩 중 표시할 UI
  * @param errorFallback - 에러 발생 시 표시할 UI (함수로 전달 시 error, resetError 제공)
  * @param onError - 에러 발생 시 호출되는 콜백 함수
+ * @param resetKeys - 에러 발생 시 리셋할 키
  */
 export function AsyncBoundary({
   children,
@@ -27,9 +29,10 @@ export function AsyncBoundary({
     <ErrorFallback error={error} resetError={resetError} />
   ),
   onError,
+  resetKeys,
 }: AsyncBoundaryProps) {
   return (
-    <ErrorBoundary fallback={errorFallback} onError={onError}>
+    <ErrorBoundary fallback={errorFallback} onError={onError} resetKeys={resetKeys}>
       <Suspense fallback={loadingFallback}>{children}</Suspense>
     </ErrorBoundary>
   );
