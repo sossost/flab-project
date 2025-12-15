@@ -4,5 +4,6 @@ export const queryKeys = {
     lists: () => [...queryKeys.posts.all, 'list'] as const,
     list: (page: number, filters?: object) =>
       [...queryKeys.posts.lists(), { page, ...filters }] as const,
+    infinite: () => [...queryKeys.posts.all, 'infinite'] as const,
   },
 };
