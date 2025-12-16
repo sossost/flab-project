@@ -3,16 +3,14 @@
 import { css } from '@emotion/react';
 
 import { EmptyState } from '@/shared/components';
-import { PostList } from '@/shared/components/post/PostList';
-import { PostListSkeleton } from '@/shared/components/post/PostListSkeleton';
+import { PostList, PostListSkeleton } from '@/shared/components/post';
+import { useSearchPosts } from '@/shared/hooks/useSearchPosts';
 
-import { useSearchPosts } from '../hooks/useSearchPosts';
-
-type SearchWithSubmitContainerProps = {
+type SearchResultContainerProps = {
   keyword: string;
 };
 
-export function SearchWithSubmitContainer({ keyword }: SearchWithSubmitContainerProps) {
+export function SearchResultContainer({ keyword }: SearchResultContainerProps) {
   const { data: posts = [], isFetching, isLoading } = useSearchPosts(keyword);
 
   if (isLoading) {

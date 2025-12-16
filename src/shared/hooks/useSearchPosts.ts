@@ -1,8 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
+import { getSearchPosts } from '@/shared/api/search';
 import { queryKeys } from '@/shared/constants';
-
-import { getSearchPosts } from '../api/searchPosts';
 
 export const useSearchPosts = (keyword: string) => {
   return useQuery({
