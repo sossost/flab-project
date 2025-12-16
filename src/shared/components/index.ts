@@ -7,3 +7,4 @@ export * from './Title';
 export * from './EmptyState';
 export * from './Skeleton';
 export * from './Spacing';
+export * from './SearchInput';
