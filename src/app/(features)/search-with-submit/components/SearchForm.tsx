@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { css } from '@emotion/react';
 import { useForm } from 'react-hook-form';
 
-import { SearchInput } from '@/shared/components';
-import { Button } from '@/shared/components/Button';
+import { Button } from '@/shared/components';
+import { SearchInput } from '@/shared/components/search';
 
 type SearchFormProps = {
   initialKeyword: string;

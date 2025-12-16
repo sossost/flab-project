@@ -12,7 +12,8 @@ export const SearchInput = ({ error, ...props }: SearchInputProps) => {
   return (
     <input
       css={css`
-        flex: 1;
+        width: 100%;
+        min-width: 0;
         padding: 10px 12px;
         border-radius: 6px;
         border: 1px solid ${error ? '#ef4444' : '#ddd'};
