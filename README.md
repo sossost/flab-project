@@ -53,15 +53,19 @@ src/
     components/                   # 공통 컴포넌트
       ErrorBoundary.tsx
       AsyncBoundary.tsx
+      search/                    # 검색 관련 공통 컴포넌트
+        SearchInput.tsx
+        SearchResultContainer.tsx
       # ... 기타 공용 컴포넌트
     hooks/                       # 공통 커스텀 훅
+      useDebounce.ts
+      useSearchPosts.ts
     utils/                       # 유틸 함수
     types/                       # 공통 타입 정의
     constants/                   # 상수
     api/                         # 공통 API 클라이언트
       client.ts
-      types.ts
-      config.ts
+      search.ts                  # 검색 API 함수
 ```
 
 ### 아키텍처 원칙
@@ -190,7 +194,8 @@ NEXT_PUBLIC_API_URL=http://localhost:3000/api
 - [프로젝트 세팅](./docs/decisions/01-project-setup.md)
 - [아키텍처](./docs/decisions/02-architecture.md)
 - [페이지네이션 피쳐](./docs/decisions/03-pagination.md)
-- [페이지네이션 피쳐](./docs/decisions/03-pagination.md)
+- [무한스크롤 피쳐](./docs/decisions/04-infinite-scroll.md)
+- [검색 피쳐](./docs/decisions/04-search.md)
 
 ## Learn More
 
