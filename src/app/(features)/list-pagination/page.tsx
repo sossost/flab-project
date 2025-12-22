@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import { AsyncBoundary, Spacing, Title } from '@/shared/components';
 import { PostListSkeleton } from '@/shared/components/post';
 
-import { PaginationListErrorFallback, PaginationListContainer } from './components';
+import { PaginationListContainer } from './components';
 
 type ListPaginationPageProps = {
   searchParams: Promise<{
@@ -20,11 +20,7 @@ export default async function ListPaginationPage({ searchParams }: ListPaginatio
         포스트 목록
       </Title>
       <Spacing size={20} />
-      <AsyncBoundary
-        loadingFallback={<PostListSkeleton />}
-        errorFallback={PaginationListErrorFallback}
-        resetKeys={[searchParamsData.page]}
-      >
+      <AsyncBoundary loadingFallback={<PostListSkeleton />} resetKeys={[searchParamsData.page]}>
         <PaginationListContainer />
       </AsyncBoundary>
     </>

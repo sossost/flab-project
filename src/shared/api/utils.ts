@@ -20,3 +20,23 @@ export function isApiError(error: unknown): error is ApiError {
 
   return 'status' in error && 'message' in error;
 }
+
+export function getErrorMessage(
+  error: Error | null | undefined,
+  defaultMessage = '알 수 없는 오류가 발생했습니다.',
+): string {
+  if (!error) {
+    return defaultMessage;
+  }
+
+  if (isApiError(error)) {
+    if (error.data && typeof error.data === 'object' && 'message' in error.data) {
+      const dataMessage = (error.data as { message: string }).message;
+      if (dataMessage) {
+        return dataMessage;
+      }
+    }
+  }
+
+  return error.message || defaultMessage;
+}
