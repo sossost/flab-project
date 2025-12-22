@@ -28,6 +28,15 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
     onPageChange(page);
   };
 
+  const getPageNumbers = (): number[] => {
+    const pageGroupSize = 10;
+    const currentGroup = Math.floor((currentPage - 1) / pageGroupSize);
+    const startPage = currentGroup * pageGroupSize + 1;
+    const endPage = Math.min(startPage + pageGroupSize - 1, totalPages);
+
+    return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+  };
+
   return (
     <nav
       aria-label="페이지네이션"
@@ -55,7 +64,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
           gap: ${theme.spacing.xs};
         `}
       >
-        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+        {getPageNumbers().map((page) => (
           <Button
             key={page}
             variant={page === currentPage ? 'primary' : 'outline'}
