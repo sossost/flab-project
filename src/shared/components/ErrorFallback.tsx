@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 import { css } from '@emotion/react';
 
+import { getErrorMessage } from '@/shared/api';
 import { theme } from '@/shared/theme';
 import { pxToRem } from '@/shared/utils';
 
@@ -14,24 +15,24 @@ type RedirectButtonConfig = {
   label: string;
 };
 
-type ErrorFallbackProps = {
-  error: Error;
-  resetError: () => void;
-  isGlobalError?: boolean;
-  errorMessage?: string;
+type ErrorWithMetadata = Error & {
   redirectButton?: RedirectButtonConfig;
   variant?: 'page' | 'widget';
 };
 
-export function ErrorFallback({
-  error,
-  resetError,
-  errorMessage,
-  isGlobalError = false,
-  redirectButton = { href: '/', label: '홈으로 이동' },
-  variant = 'page',
-}: ErrorFallbackProps) {
+type ErrorFallbackProps = {
+  error: Error;
+  resetError: () => void;
+  isGlobalError?: boolean;
+};
+
+export function ErrorFallback({ error, resetError, isGlobalError = false }: ErrorFallbackProps) {
+  // 에러 객체에서 메타데이터 추출
+  const errorWithMetadata = error as ErrorWithMetadata;
+  const redirectButton = errorWithMetadata.redirectButton;
+  const variant = errorWithMetadata.variant || 'page';
   const isPage = variant === 'page';
+  const hasRedirectButton = !!redirectButton;
 
   return (
     <div
@@ -67,7 +68,7 @@ export function ErrorFallback({
           white-space: pre-wrap;
         `}
       >
-        {errorMessage || error.message || '알 수 없는 오류가 발생했습니다.'}
+        {getErrorMessage(error)}
       </p>
 
       <div
@@ -80,10 +81,12 @@ export function ErrorFallback({
           다시 시도
         </Button>
 
-        {/* Global Error는 a 태그를 사용하여 Hard Reload 유도 */}
-        <Button as={isGlobalError ? 'a' : Link} variant="secondary" href={redirectButton.href}>
-          {redirectButton.label}
-        </Button>
+        {hasRedirectButton && (
+          /* Global Error는 a 태그를 사용하여 Hard Reload 유도 */
+          <Button as={isGlobalError ? 'a' : Link} variant="secondary" href={redirectButton.href}>
+            {redirectButton.label}
+          </Button>
+        )}
       </div>
     </div>
   );
